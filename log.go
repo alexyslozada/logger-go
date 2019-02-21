@@ -3,6 +3,7 @@ package logger_go
 import (
 	"log"
 	"os"
+	"path"
 )
 
 type Model struct {
@@ -13,23 +14,25 @@ type Model struct {
 }
 
 func New(i, e, t, w string) *Model {
+	createDirectories(i, e, t, w)
+
 	m := &Model{}
-	fileTrace, err := os.OpenFile(t+"/trace.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileTrace, err := createFile(t, "trace.log")
 	if err != nil {
 		log.Fatalf("error opening fileTrace file: %v", err)
 	}
 
-	fileInfo, err := os.OpenFile(i+"/info.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileInfo, err := createFile(i, "info.log")
 	if err != nil {
 		log.Fatalf("error opening fileInfo file: %v", err)
 	}
 
-	fileWarning, err := os.OpenFile(w+"/warning.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileWarning, err := createFile(w, "warning.log")
 	if err != nil {
 		log.Fatalf("error opening fileWarning file: %v", err)
 	}
 
-	fileError, err := os.OpenFile(e+"/error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	fileError, err := createFile(e, "error.log")
 	if err != nil {
 		log.Fatalf("error opening fileError file: %v", err)
 	}
@@ -51,4 +54,42 @@ func New(i, e, t, w string) *Model {
 		log.Ldate|log.Ltime|log.Llongfile)
 
 	return m
+}
+
+// createDirectories revisa y crea (de ser necesario) los directorios
+// de los log
+func createDirectories(i, e, t, w string) {
+	checkDirErr(checkDirectory(i))
+	checkDirErr(checkDirectory(e))
+	checkDirErr(checkDirectory(t))
+	checkDirErr(checkDirectory(w))
+}
+
+// checkDirectory crea el directorio si no existe
+func checkDirectory(d string) error {
+	_, err := os.Stat(d)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(d, os.ModeDir|os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// checkDirErr controla el error y termina el proceso
+func checkDirErr(err error) {
+	if err != nil {
+		log.Fatalf("no se pudo crear el directorio: %v", err)
+	}
+}
+
+// createFile crea el archivo de log
+func createFile(d, s string) (*os.File, error) {
+	return os.OpenFile(
+		path.Join(d, s),
+		os.O_RDWR|os.O_CREATE|os.O_APPEND,
+		0666,
+	)
 }
