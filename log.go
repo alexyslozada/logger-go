@@ -4,54 +4,64 @@ import (
 	"log"
 	"os"
 	"path"
+	"sync"
 )
 
-type Model struct {
+var (
+	m    *model
+	once sync.Once
+)
+
+type model struct {
 	Trace   *log.Logger
 	Info    *log.Logger
 	Warning *log.Logger
 	Error   *log.Logger
 }
 
-func New(i, e, t, w string) *Model {
-	createDirectories(i, e, t, w)
+func New(infoDir, errDir, traceDir, warnDir string) *model {
+	once.Do(func() {
+		if m == nil {
+			m = &model{}
+			createDirectories(infoDir, errDir, traceDir, warnDir)
 
-	m := &Model{}
-	fileTrace, err := createFile(t, "trace.log")
-	if err != nil {
-		log.Fatalf("error opening fileTrace file: %v", err)
-	}
+			fileTrace, err := createFile(traceDir, "trace.log")
+			if err != nil {
+				log.Fatalf("error opening fileTrace file: %v", err)
+			}
 
-	fileInfo, err := createFile(i, "info.log")
-	if err != nil {
-		log.Fatalf("error opening fileInfo file: %v", err)
-	}
+			fileInfo, err := createFile(infoDir, "info.log")
+			if err != nil {
+				log.Fatalf("error opening fileInfo file: %v", err)
+			}
 
-	fileWarning, err := createFile(w, "warning.log")
-	if err != nil {
-		log.Fatalf("error opening fileWarning file: %v", err)
-	}
+			fileWarning, err := createFile(warnDir, "warning.log")
+			if err != nil {
+				log.Fatalf("error opening fileWarning file: %v", err)
+			}
 
-	fileError, err := createFile(e, "error.log")
-	if err != nil {
-		log.Fatalf("error opening fileError file: %v", err)
-	}
+			fileError, err := createFile(errDir, "error.log")
+			if err != nil {
+				log.Fatalf("error opening fileError file: %v", err)
+			}
 
-	m.Trace = log.New(fileTrace,
-		"TRACE: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+			m.Trace = log.New(fileTrace,
+				"TRACE: ",
+				log.Ldate|log.Ltime|log.Llongfile)
 
-	m.Info = log.New(fileInfo,
-		"INFO: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+			m.Info = log.New(fileInfo,
+				"INFO: ",
+				log.Ldate|log.Ltime|log.Llongfile)
 
-	m.Warning = log.New(fileWarning,
-		"WARNING: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+			m.Warning = log.New(fileWarning,
+				"WARNING: ",
+				log.Ldate|log.Ltime|log.Llongfile)
 
-	m.Error = log.New(fileError,
-		"ERROR: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+			m.Error = log.New(fileError,
+				"ERROR: ",
+				log.Ldate|log.Ltime|log.Llongfile)
+		}
+	})
 
 	return m
 }
