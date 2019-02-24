@@ -19,6 +19,7 @@ type Model struct {
 }
 
 func New(infoDir, errDir, traceDir, warnDir string) *Model {
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 	once.Do(func() {
 		createDirectories(infoDir, errDir, traceDir, warnDir)
 	})
